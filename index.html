@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Holo-Grate v4.8 (Fibonacci Fix)</title>
+    <title>Holo-Grate v5.0 (WYSIWYG)</title>
     <style>
         :root {
             --bg: #050505; --panel: #111; --text: #ddd;
-            --accent: #d500f9; /* Purple for Fibonacci */
+            --accent: #ff00ff; /* Magenta */
             --border: #333; --danger: #ff1744; --success: #00e676;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; margin: 0; overflow: hidden; }
@@ -60,7 +60,7 @@
 </div>
 
 <div class="controls">
-    <div><h2>Holo-Grate</h2><div class="subtitle">v4.8 Fibonacci Fix</div></div>
+    <div><h2>Holo-Grate</h2><div class="subtitle">v5.0 WYSIWYG</div></div>
 
     <div class="preset-container">
         <label>PRESETS</label>
@@ -76,10 +76,10 @@
 
     <div class="control-group"><label>Pattern</label>
         <select id="patternType" onchange="requestUpdate()">
-            <option value="fibonacci">Fibonacci (Sunflower)</option>
+            <option value="polygon">N-Sided Polygon (Jewel)</option>
             <option value="guilloche">Guilloché (Sine Wave)</option>
             <option value="basket">Basket Weave (Triangle)</option>
-            <option value="polygon">N-Sided Polygon (Jewel)</option>
+            <option value="fibonacci">Fibonacci (Sunflower)</option>
             <option value="rose">Concentric Rose (Sacred)</option>
             <option value="spiral">Archimedean Spiral</option>
         </select>
@@ -99,25 +99,27 @@
             <div style="flex:2"><input type="number" id="minDist" value="0.01" step="0.001"></div>
             <div style="flex:1; align-self:center; font-size:0.7em; color:#888;">Min Dist</div>
         </div>
-        <div style="font-size:0.7em; color:#666; margin-top:4px;">Auto-enabled for Fibonacci.</div>
+        <div style="font-size:0.7em; color:#666; margin-top:4px;">Set 0.01 to reduce file size safely.</div>
     </div>
 
     <div id="guillocheParams" class="specific-params" style="display:none">
         <label style="color:var(--accent)">Guilloché Modulation</label>
         <div class="control-group"><label>Frequency</label><div class="dual-input"><div><span class="dual-label">Inner</span><input type="number" id="gFreqStart" value="16" oninput="requestUpdate()"></div><div><span class="dual-label">Outer</span><input type="number" id="gFreqEnd" value="16" oninput="requestUpdate()"></div></div></div>
         <div class="control-group"><label>Amplitude</label><div class="dual-input"><div><span class="dual-label">Inner</span><input type="number" id="gAmpStart" value="0.5" step="0.1" oninput="requestUpdate()"></div><div><span class="dual-label">Outer</span><input type="number" id="gAmpEnd" value="1.5" step="0.1" oninput="requestUpdate()"></div></div></div>
+        <div class="control-group"><label>Phase Offset (Deg)</label><input type="number" id="gPhase" value="0" step="15" oninput="requestUpdate()"></div>
     </div>
 
     <div id="basketParams" class="specific-params" style="display:none">
         <label style="color:var(--accent)">Basket Modulation</label>
         <div class="control-group"><label>Frequency</label><div class="dual-input"><div><span class="dual-label">Inner</span><input type="number" id="bFreqStart" value="20" oninput="requestUpdate()"></div><div><span class="dual-label">Outer</span><input type="number" id="bFreqEnd" value="20" oninput="requestUpdate()"></div></div></div>
         <div class="control-group"><label>Amplitude</label><div class="dual-input"><div><span class="dual-label">Inner</span><input type="number" id="bAmpStart" value="1.0" step="0.1" oninput="requestUpdate()"></div><div><span class="dual-label">Outer</span><input type="number" id="bAmpEnd" value="1.0" step="0.1" oninput="requestUpdate()"></div></div></div>
+        <div class="control-group"><label>Phase Offset (Deg)</label><input type="number" id="bPhase" value="0" step="15" oninput="requestUpdate()"></div>
     </div>
 
-    <div id="polyParams" class="specific-params" style="display:none">
+    <div id="polyParams" class="specific-params">
         <label style="color:var(--accent)">Polygon Settings</label>
         <div class="control-group"><label>Sides (Min 3)</label><input type="number" id="polySides" value="6" min="3" oninput="requestUpdate()"></div>
-        <div class="control-group"><label>Rotation</label><div class="dual-input"><div><span class="dual-label">Start</span><input type="number" id="polyRotStart" value="0" step="5" oninput="requestUpdate()"></div><div><span class="dual-label">End</span><input type="number" id="polyRotEnd" value="0" step="5" oninput="requestUpdate()"></div></div></div>
+        <div class="control-group"><label>Rotation Twist</label><div class="dual-input"><div><span class="dual-label">Start</span><input type="number" id="polyRotStart" value="0" step="5" oninput="requestUpdate()"></div><div><span class="dual-label">End</span><input type="number" id="polyRotEnd" value="90" step="5" oninput="requestUpdate()"></div></div></div>
         <div class="control-group"><label><input type="checkbox" id="polyCurve" onchange="requestUpdate()" style="width:auto"> Curved Sides?</label></div>
         <div id="polyCurveControl" class="control-group" style="display:none"><label>Curve Morph</label><div class="dual-input"><div><span class="dual-label">Start</span><input type="number" id="polyCurveStart" value="0.5" step="0.1" oninput="requestUpdate()"></div><div><span class="dual-label">End</span><input type="number" id="polyCurveEnd" value="0.5" step="0.1" oninput="requestUpdate()"></div></div></div>
     </div>
@@ -146,8 +148,8 @@
 
 <script>
     // PRESETS
-    const STORAGE_KEY="holoGrate_v4.8_presets", CURR_KEY="holoGrate_v4.8_curr";
-    const IDS = ["patternType","size","innerSize","pitch","distress","fidelity","minDist","polySides","polyRotStart","polyRotEnd","polyCurve","polyCurveStart","polyCurveEnd","bFreqStart","bFreqEnd","bAmpStart","bAmpEnd","gFreqStart","gFreqEnd","gAmpStart","gAmpEnd","n","d"];
+    const STORAGE_KEY="holoGrate_v5.0_presets", CURR_KEY="holoGrate_v5.0_curr";
+    const IDS = ["patternType","size","innerSize","pitch","distress","fidelity","minDist","polySides","polyRotStart","polyRotEnd","polyCurve","polyCurveStart","polyCurveEnd","bFreqStart","bFreqEnd","bAmpStart","bAmpEnd","bPhase","gFreqStart","gFreqEnd","gAmpStart","gAmpEnd","gPhase","n","d"];
     function initPresets(){
         const sel=document.getElementById("presetSelect"); const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");
         sel.innerHTML='<option value="">Load...</option>';
@@ -187,7 +189,8 @@
         const paramT = getT(rMod, job.rMin, job.rMax);
         const amp = lerp(job.aS, job.aE, paramT);
         const freq = lerp(job.fS, job.fE, paramT);
-        const phase = (t/job.genR) * Math.PI * freq;
+        const phaseOffset = (job.phaseDeg || 0) * Math.PI / 180;
+        const phase = ((t/job.genR) * Math.PI * freq) + phaseOffset;
         if(job.type==="basket_line") return p + ((2/Math.PI)*Math.asin(Math.sin(phase))*amp);
         return p + Math.sin(phase)*amp;
     }
@@ -207,7 +210,7 @@
         const pxPerMM=(dispSize*0.95)/od; const gridSize=10*pxPerMM; document.getElementById("bgGrid").style.backgroundSize=`${gridSize}px ${gridSize}px`;
         const cx=dispSize/2; const cy=dispSize/2; const or=od/2; const ir=id/2;
         
-        ctx.strokeStyle= (type==="fibonacci") ? "#d500f9" : "#2979ff"; 
+        ctx.strokeStyle= (type==="fibonacci") ? "#d500f9" : "#ff00ff"; 
         ctx.lineWidth=0.5; ctx.globalAlpha=0.8;
         ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, or*pxPerMM, 0, Math.PI*2, false); if(ir>0) ctx.arc(cx, cy, ir*pxPerMM, 0, Math.PI*2, true); ctx.clip();
         nodes=0; const stepMM=1/fidelity;
@@ -217,11 +220,12 @@
             const isB=type==="basket"; const prefix=isB?"b":"g";
             const fS=parseFloat(document.getElementById(prefix+"FreqStart").value); const fE=parseFloat(document.getElementById(prefix+"FreqEnd").value);
             const aS=parseFloat(document.getElementById(prefix+"AmpStart").value); const aE=parseFloat(document.getElementById(prefix+"AmpEnd").value);
+            const phase=parseFloat(document.getElementById(prefix+"Phase").value);
             const passes=[45,-45]; const overscan=or*1.5;
             passes.forEach(deg=>{
                 const rad=deg*Math.PI/180; let p=-overscan;
                 while(p<=overscan){
-                    q.push({type:isB?"basket_line":"guilloche_line", p:p, angle:rad, fS:fS, fE:fE, aS:aS, aE:aE, genR:overscan, cx:cx, cy:cy, scale:pxPerMM, step:stepMM, distress:distress, rMin:ir, rMax:or});
+                    q.push({type:isB?"basket_line":"guilloche_line", p:p, angle:rad, fS:fS, fE:fE, aS:aS, aE:aE, phaseDeg:phase, genR:overscan, cx:cx, cy:cy, scale:pxPerMM, step:stepMM, distress:distress, rMin:ir, rMax:or});
                     p+=activePitch;
                 }
             });
@@ -237,7 +241,6 @@
         }
         else if(type==="fibonacci"){
             const maxN=Math.pow(or/activePitch,2); const startN=Math.pow(ir/activePitch,2);
-            // FIB PREVIEW: Use simpler steps
             q.push({type:"fib", n:startN, maxN:maxN, c:activePitch, cx:cx, cy:cy, scale:pxPerMM, fidelity:fidelity, distress:distress});
         }
         else if(type==="spiral"){
@@ -246,8 +249,14 @@
         }
         else if(type==="polygon"){
             const sides=Math.max(3, parseInt(document.getElementById("polySides").value));
+            const rS=parseFloat(document.getElementById("polyRotStart").value); const rE=parseFloat(document.getElementById("polyRotEnd").value);
+            const isC=document.getElementById("polyCurve").checked;
+            const cS=parseFloat(document.getElementById("polyCurveStart").value); const cE=parseFloat(document.getElementById("polyCurveEnd").value);
             const radStep=activePitch/Math.cos(Math.PI/sides); let r=or;
-            while(r>=ir){ q.push({type:"poly_preview", sides:sides, r:r, cx:cx, cy:cy, scale:pxPerMM}); r-=radStep; }
+            while(r>=ir){ 
+                q.push({type:"poly", r:r, sides:sides, rS:rS, rE:rE, isC:isC, cS:cS, cE:cE, cx:cx, cy:cy, scale:pxPerMM, fidelity:fidelity, distress:distress, rMin:ir, rMax:or}); 
+                r-=radStep; 
+            }
         }
         processQ();
     }
@@ -297,15 +306,39 @@
                 const x=job.cx+r*Math.cos(th)*job.scale; const y=job.cy+r*Math.sin(th)*job.scale;
                 if(isGap()) ctx.moveTo(x,y);
                 else { if(!job.lastX) ctx.moveTo(x,y); else ctx.lineTo(x,y); nodes++; ops++; }
-                job.lastX=x; job.n+=0.2; // Preview speed factor
+                job.lastX=x; job.n+=0.2; 
             }
             return {done:job.n>=job.maxN, ops:ops};
         }
-        else if(job.type==="poly_preview"){
-            for(let i=0; i<=job.sides; i++){
-                const th = i * 2 * Math.PI / job.sides; const x=job.cx+(job.r*Math.cos(th))*job.scale; const y=job.cy+(job.r*Math.sin(th))*job.scale;
-                if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); nodes++; ops++;
+        else if(job.type==="poly"){
+            // FULL POLY PREVIEW MATH (Fixed from v4.0)
+            const paramT = getT(job.r, job.rMin, job.rMax);
+            const rot = lerp(job.rS, job.rE, paramT); const rad = rot*Math.PI/180;
+            const curve = lerp(job.cS, job.cE, paramT);
+            
+            const sideLen = 2*job.r*Math.sin(Math.PI/job.sides);
+            const steps = Math.max(2, Math.ceil(sideLen * (1+Math.abs(curve))*job.fidelity));
+            
+            for(let i=0; i<job.sides; i++){
+                const t1 = rad + (i*2*Math.PI/job.sides); const x1=job.r*Math.cos(t1); const y1=job.r*Math.sin(t1);
+                const t2 = rad + ((i+1)*2*Math.PI/job.sides); const x2=job.r*Math.cos(t2); const y2=job.r*Math.sin(t2);
+                
+                const mx=(x1+x2)/2; const my=(y1+y2)/2;
+                const dist=Math.sqrt(mx*mx+my*my); const nx=mx/dist; const ny=my/dist;
+                const cpx = mx + nx*(sideLen*curve*0.5); const cpy = my + ny*(sideLen*curve*0.5);
+                
+                for(let k=0; k<=steps; k++){
+                    const t = k/steps; const inv = 1-t;
+                    let fx, fy;
+                    if(!job.isC || curve===0){ fx=x1+(x2-x1)*t; fy=y1+(y2-y1)*t; }
+                    else { fx = (inv*inv*x1) + (2*inv*t*cpx) + (t*t*x2); fy = (inv*inv*y1) + (2*inv*t*cpy) + (t*t*y2); }
+                    
+                    const sx = job.cx+fx*job.scale; const sy = job.cy+fy*job.scale;
+                    if(i===0 && k===0) ctx.moveTo(sx,sy);
+                    else { if(isGap()) ctx.moveTo(sx,sy); else { ctx.lineTo(sx,sy); nodes++; ops++; } }
+                }
             }
+            ctx.closePath();
             return {done:true, ops:ops};
         }
         else if(job.type==="spiral"){
@@ -335,10 +368,9 @@
         
         // OPTIMIZATION
         let minD = parseFloat(document.getElementById("minDist").value) || 0;
-        // FORCE OPTIMIZATION FOR FIBONACCI
         if(type==="fibonacci" && minD < 0.005) minD = 0.005;
-        
         const MIN_DIST_SQ = minD * minD;
+        
         const or=od/2; const ir=id/2; const cx=or; const cy=or;
         const YIELD_MS=12; let lastYield=performance.now();
         async function checkYield(){ if(performance.now()-lastYield>YIELD_MS){ await new Promise(r=>setTimeout(r,0)); lastYield=performance.now(); } }
@@ -370,6 +402,7 @@
                 const isB=type==="basket"; const prefix=isB?"b":"g";
                 const fS=parseFloat(document.getElementById(prefix+"FreqStart").value); const fE=parseFloat(document.getElementById(prefix+"FreqEnd").value);
                 const aS=parseFloat(document.getElementById(prefix+"AmpStart").value); const aE=parseFloat(document.getElementById(prefix+"AmpEnd").value);
+                const phase=parseFloat(document.getElementById(prefix+"Phase").value);
                 const passes=[45,-45]; const overscan=or*1.5;
                 let totalSteps=passes.length*(2*overscan/pitch); let currStep=0;
                 for(const deg of passes){
@@ -379,7 +412,7 @@
                         for(let i=0; i<=pts; i++){
                             const t=(i/pts)*2*overscan-overscan;
                             const rMod=Math.sqrt(t*t + p*p);
-                            const jobMock={rMin:ir, rMax:or, fS:fS, fE:fE, aS:aS, aE:aE, genR:overscan, type:isB?"basket_line":"guilloche_line"};
+                            const jobMock={rMin:ir, rMax:or, fS:fS, fE:fE, aS:aS, aE:aE, phaseDeg:phase, genR:overscan, type:isB?"basket_line":"guilloche_line"};
                             const rawY=getWaveY(jobMock, t, p, rMod);
                             const rx=t*Math.cos(rad)-rawY*Math.sin(rad);
                             const ry=t*Math.sin(rad)+rawY*Math.cos(rad);
@@ -398,10 +431,8 @@
                     const len=maxTheta*r; const steps=Math.ceil(len*fidelity);
                     let penDown=false;
                     for(let i=0; i<=steps; i++){
-                        const th=(i/steps)*maxTheta;
-                        const rRaw=r*Math.cos((n/d)*th);
+                        const th=(i/steps)*maxTheta; const rRaw=r*Math.cos((n/d)*th);
                         if(Math.abs(rRaw)<ir){ penDown=false; continue; }
-                        
                         const x=cx+rRaw*Math.cos(th); const y=cy+rRaw*Math.sin(th);
                         pt(x,y, !penDown); penDown=true;
                         if(i%1000===0) await checkYield();
@@ -417,11 +448,7 @@
                     const r=pitch*Math.sqrt(n); const th=n*gAngle;
                     const x=cx+r*Math.cos(th); const y=cy+r*Math.sin(th);
                     pt(x,y, isFirst); isFirst=false;
-                    let rSafe=Math.max(r,0.05); 
-                    // FIXED: Dynamic step limit
-                    let step = stepMM/rSafe;
-                    if(step < 0.1) step = 0.1; // LIMIT detail
-                    n+=step;
+                    let rSafe=Math.max(r,0.05); n+=stepMM/rSafe;
                     if(exportNodes%5000===0){ await checkYield(); status.innerText=`Nodes: ${exportNodes.toLocaleString()}`; }
                 }
             }
@@ -448,9 +475,11 @@
                     const curve = lerp(cS, cE, paramT);
                     const sideLen = 2*r*Math.sin(Math.PI/sides); const arcLenEst = sideLen * (1 + (isC?Math.abs(curve):0)*0.5); 
                     const segments = Math.max(4, Math.ceil(arcLenEst * fidelity));
+                    
                     for(let i=0; i<sides; i++){
                         const t1=rad+(i*2*Math.PI/sides); const x1=r*Math.cos(t1); const y1=r*Math.sin(t1);
                         const t2=rad+((i+1)*2*Math.PI/sides); const x2=r*Math.cos(t2); const y2=r*Math.sin(t2);
+                        
                         if(!isC || curve===0){
                             for(let k=0; k<=segments; k++){
                                 const t=k/segments; const px=cx+x1+(x2-x1)*t; const py=cy+y1+(y2-y1)*t;
@@ -479,7 +508,7 @@
             const finalBlob = new Blob(blobs, {type:"image/svg+xml"});
             const url = URL.createObjectURL(finalBlob);
             const a = document.createElement("a"); a.href = url;
-            a.download = `holo_v4.8_${type}.svg`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            a.download = `holo_v5.0_${type}.svg`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
 
         } catch(e) { alert("Export Error: "+e.message); } finally { btn.disabled=false; overlay.classList.remove("active"); }
     }
