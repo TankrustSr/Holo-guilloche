@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Holo-Grate v5.0 (WYSIWYG)</title>
+    <title>Holo-Grate v24.0 (Stable Math)</title>
     <style>
         :root {
             --bg: #050505; --panel: #111; --text: #ddd;
-            --accent: #ff00ff; /* Magenta */
-            --border: #333; --danger: #ff1744; --success: #00e676;
+            --accent: #2979ff; /* Stability Blue */
+            --border: #333; --success: #00e676;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; margin: 0; overflow: hidden; }
         ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
@@ -37,6 +37,10 @@
             background-image: linear-gradient(#222 1px, transparent 1px), linear-gradient(90deg, #222 1px, transparent 1px); background-size: 50px 50px; opacity: 0.5; }
         canvas { box-shadow: 0 0 50px rgba(0,0,0,0.5); border: 1px solid #333; z-index: 5; }
         
+        .img-box { border: 1px dashed #444; padding: 10px; border-radius: 4px; text-align: center; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
+        .img-box:hover { border-color: var(--accent); background: #1a1a1a; }
+        #imgPreview { width: 100%; height: 60px; object-fit: cover; opacity: 0.5; display: none; margin-top:5px; border-radius: 4px; }
+        
         #exportOverlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.9); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         #exportOverlay.active { opacity: 1; pointer-events: all; }
         .loader-bar { width: 300px; height: 4px; background: #333; margin-top: 10px; border-radius: 2px; overflow: hidden; }
@@ -60,7 +64,7 @@
 </div>
 
 <div class="controls">
-    <div><h2>Holo-Grate</h2><div class="subtitle">v5.0 WYSIWYG</div></div>
+    <div><h2>Holo-Grate</h2><div class="subtitle">v24.0 Stable</div></div>
 
     <div class="preset-container">
         <label>PRESETS</label>
@@ -74,23 +78,41 @@
         </div>
     </div>
 
+    <div class="control-group">
+        <label>Image Modulation (Brightness)</label>
+        <div class="img-box" onclick="document.getElementById('imgInput').click()">
+            <span style="font-size:0.8em; color:#888;">Click to Upload Map</span>
+            <input type="file" id="imgInput" style="display:none" accept="image/*" onchange="handleImage(this)">
+            <img id="imgPreview">
+        </div>
+        <div style="font-size:0.7em; color:#555; margin-top:4px;">Black = Start Settings, White = End Settings</div>
+        <div class="control-group" style="margin-top:5px"><label><input type="checkbox" id="useImage" onchange="requestUpdate()"> Enable Image Mod</label></div>
+    </div>
+
     <div class="control-group"><label>Pattern</label>
         <select id="patternType" onchange="requestUpdate()">
-            <option value="polygon">N-Sided Polygon (Jewel)</option>
             <option value="guilloche">Guilloché (Sine Wave)</option>
             <option value="basket">Basket Weave (Triangle)</option>
-            <option value="fibonacci">Fibonacci (Sunflower)</option>
+            <option value="polygon">N-Sided Polygon (Jewel)</option>
             <option value="rose">Concentric Rose (Sacred)</option>
             <option value="spiral">Archimedean Spiral</option>
+            <option value="fibonacci">Fibonacci (Sunflower)</option>
         </select>
     </div>
 
     <div class="control-group"><label>Outer Diameter (mm)</label><input type="number" id="size" value="28.5" step="0.1" oninput="requestUpdate()"></div>
     <div class="control-group"><label>Inner Diameter (mm)</label><input type="number" id="innerSize" value="2.0" step="0.1" oninput="requestUpdate()"></div>
-    <div class="control-group"><label>Pitch (mm)</label><input type="number" id="pitch" value="0.03" step="0.001" oninput="requestUpdate()"></div>
+    
+    <div class="control-group">
+        <label style="color:var(--accent)">Pitch Gradient (mm)</label>
+        <div class="dual-input">
+            <div><span class="dual-label">Start (Inner)</span><input type="number" id="pitchStart" value="0.03" step="0.001" oninput="requestUpdate()"></div>
+            <div><span class="dual-label">End (Outer)</span><input type="number" id="pitchEnd" value="0.03" step="0.001" oninput="requestUpdate()"></div>
+        </div>
+    </div>
     
     <div class="control-group"><label>Distress (0-0.5)</label><input type="range" id="distress" min="0" max="0.5" step="0.01" value="0" oninput="requestUpdate()"></div>
-    <div class="control-group"><label>Smoothness</label><input type="range" id="fidelity" min="5" max="100" step="1" value="30" oninput="requestUpdate()"></div>
+    <div class="control-group"><label>Smoothness</label><input type="range" id="fidelity" min="5" max="100" step="1" value="50" oninput="requestUpdate()"></div>
     <div class="control-group"><label>Preview Density</label><input type="range" id="previewScale" min="0.1" max="1.0" step="0.1" value="0.5" oninput="requestUpdate()"></div>
     
     <div class="control-group opt-box">
@@ -99,27 +121,41 @@
             <div style="flex:2"><input type="number" id="minDist" value="0.01" step="0.001"></div>
             <div style="flex:1; align-self:center; font-size:0.7em; color:#888;">Min Dist</div>
         </div>
-        <div style="font-size:0.7em; color:#666; margin-top:4px;">Set 0.01 to reduce file size safely.</div>
+        <div style="font-size:0.7em; color:#666; margin-top:4px;">Set 0.01 to reduce file size.</div>
     </div>
 
-    <div id="guillocheParams" class="specific-params" style="display:none">
-        <label style="color:var(--accent)">Guilloché Modulation</label>
-        <div class="control-group"><label>Frequency</label><div class="dual-input"><div><span class="dual-label">Inner</span><input type="number" id="gFreqStart" value="16" oninput="requestUpdate()"></div><div><span class="dual-label">Outer</span><input type="number" id="gFreqEnd" value="16" oninput="requestUpdate()"></div></div></div>
-        <div class="control-group"><label>Amplitude</label><div class="dual-input"><div><span class="dual-label">Inner</span><input type="number" id="gAmpStart" value="0.5" step="0.1" oninput="requestUpdate()"></div><div><span class="dual-label">Outer</span><input type="number" id="gAmpEnd" value="1.5" step="0.1" oninput="requestUpdate()"></div></div></div>
+    <div id="guillocheParams" class="specific-params">
+        <label style="color:var(--accent)">Guilloché Config</label>
+        <div class="control-group">
+            <label>Pass Mode</label>
+            <div class="dual-input">
+                <div style="flex:2"><select id="gMode" onchange="requestUpdate()"><option value="cross">Cross (Dual)</option><option value="single">Single</option></select></div>
+                <div style="flex:1"><input type="number" id="gAngle" value="45" oninput="requestUpdate()" title="Angle"></div>
+            </div>
+        </div>
+        <div class="control-group"><label>Frequency</label><div class="dual-input"><div><span class="dual-label">Inner/Black</span><input type="number" id="gFreqStart" value="16" oninput="requestUpdate()"></div><div><span class="dual-label">Outer/White</span><input type="number" id="gFreqEnd" value="16" oninput="requestUpdate()"></div></div></div>
+        <div class="control-group"><label>Amplitude</label><div class="dual-input"><div><span class="dual-label">Inner/Black</span><input type="number" id="gAmpStart" value="0.5" step="0.1" oninput="requestUpdate()"></div><div><span class="dual-label">Outer/White</span><input type="number" id="gAmpEnd" value="1.5" step="0.1" oninput="requestUpdate()"></div></div></div>
         <div class="control-group"><label>Phase Offset (Deg)</label><input type="number" id="gPhase" value="0" step="15" oninput="requestUpdate()"></div>
     </div>
 
     <div id="basketParams" class="specific-params" style="display:none">
-        <label style="color:var(--accent)">Basket Modulation</label>
-        <div class="control-group"><label>Frequency</label><div class="dual-input"><div><span class="dual-label">Inner</span><input type="number" id="bFreqStart" value="20" oninput="requestUpdate()"></div><div><span class="dual-label">Outer</span><input type="number" id="bFreqEnd" value="20" oninput="requestUpdate()"></div></div></div>
-        <div class="control-group"><label>Amplitude</label><div class="dual-input"><div><span class="dual-label">Inner</span><input type="number" id="bAmpStart" value="1.0" step="0.1" oninput="requestUpdate()"></div><div><span class="dual-label">Outer</span><input type="number" id="bAmpEnd" value="1.0" step="0.1" oninput="requestUpdate()"></div></div></div>
+        <label style="color:var(--accent)">Basket Config</label>
+        <div class="control-group">
+            <label>Pass Mode</label>
+            <div class="dual-input">
+                <div style="flex:2"><select id="bMode" onchange="requestUpdate()"><option value="cross">Cross (Dual)</option><option value="single">Single</option></select></div>
+                <div style="flex:1"><input type="number" id="bAngle" value="45" oninput="requestUpdate()" title="Angle"></div>
+            </div>
+        </div>
+        <div class="control-group"><label>Frequency</label><div class="dual-input"><div><span class="dual-label">Inner/Black</span><input type="number" id="bFreqStart" value="20" oninput="requestUpdate()"></div><div><span class="dual-label">Outer/White</span><input type="number" id="bFreqEnd" value="20" oninput="requestUpdate()"></div></div></div>
+        <div class="control-group"><label>Amplitude</label><div class="dual-input"><div><span class="dual-label">Inner/Black</span><input type="number" id="bAmpStart" value="1.0" step="0.1" oninput="requestUpdate()"></div><div><span class="dual-label">Outer/White</span><input type="number" id="bAmpEnd" value="1.0" step="0.1" oninput="requestUpdate()"></div></div></div>
         <div class="control-group"><label>Phase Offset (Deg)</label><input type="number" id="bPhase" value="0" step="15" oninput="requestUpdate()"></div>
     </div>
 
-    <div id="polyParams" class="specific-params">
+    <div id="polyParams" class="specific-params" style="display:none">
         <label style="color:var(--accent)">Polygon Settings</label>
-        <div class="control-group"><label>Sides (Min 3)</label><input type="number" id="polySides" value="6" min="3" oninput="requestUpdate()"></div>
-        <div class="control-group"><label>Rotation Twist</label><div class="dual-input"><div><span class="dual-label">Start</span><input type="number" id="polyRotStart" value="0" step="5" oninput="requestUpdate()"></div><div><span class="dual-label">End</span><input type="number" id="polyRotEnd" value="90" step="5" oninput="requestUpdate()"></div></div></div>
+        <div class="control-group"><label>Sides</label><input type="number" id="polySides" value="6" min="3" oninput="requestUpdate()"></div>
+        <div class="control-group"><label>Rotation</label><div class="dual-input"><div><span class="dual-label">Start</span><input type="number" id="polyRotStart" value="0" step="5" oninput="requestUpdate()"></div><div><span class="dual-label">End</span><input type="number" id="polyRotEnd" value="0" step="5" oninput="requestUpdate()"></div></div></div>
         <div class="control-group"><label><input type="checkbox" id="polyCurve" onchange="requestUpdate()" style="width:auto"> Curved Sides?</label></div>
         <div id="polyCurveControl" class="control-group" style="display:none"><label>Curve Morph</label><div class="dual-input"><div><span class="dual-label">Start</span><input type="number" id="polyCurveStart" value="0.5" step="0.1" oninput="requestUpdate()"></div><div><span class="dual-label">End</span><input type="number" id="polyCurveEnd" value="0.5" step="0.1" oninput="requestUpdate()"></div></div></div>
     </div>
@@ -146,10 +182,12 @@
     </div>
 </div>
 
+<canvas id="imgDataCanvas" style="display:none;"></canvas>
+
 <script>
-    // PRESETS
-    const STORAGE_KEY="holoGrate_v5.0_presets", CURR_KEY="holoGrate_v5.0_curr";
-    const IDS = ["patternType","size","innerSize","pitch","distress","fidelity","minDist","polySides","polyRotStart","polyRotEnd","polyCurve","polyCurveStart","polyCurveEnd","bFreqStart","bFreqEnd","bAmpStart","bAmpEnd","bPhase","gFreqStart","gFreqEnd","gAmpStart","gAmpEnd","gPhase","n","d"];
+    // PRESETS & SETUP
+    const STORAGE_KEY="holoGrate_v24.0_presets", CURR_KEY="holoGrate_v24.0_curr";
+    const IDS = ["patternType","size","innerSize","pitchStart","pitchEnd","distress","fidelity","minDist","polySides","polyRotStart","polyRotEnd","polyCurve","polyCurveStart","polyCurveEnd","bFreqStart","bFreqEnd","bAmpStart","bAmpEnd","bPhase","gFreqStart","gFreqEnd","gAmpStart","gAmpEnd","gPhase","gMode","gAngle","bMode","bAngle","n","d","useImage"];
     function initPresets(){
         const sel=document.getElementById("presetSelect"); const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");
         sel.innerHTML='<option value="">Load...</option>';
@@ -162,10 +200,51 @@
     function applyState(s){IDS.forEach(i=>{if(s[i]!==undefined){const e=document.getElementById(i);if(e)(e.type==="checkbox"?e.checked=s[i]:e.value=s[i])}}); requestUpdate();}
     function saveCurr(){const s={}; IDS.forEach(i=>{const e=document.getElementById(i);if(e)s[i]=e.type==="checkbox"?e.checked:e.value}); localStorage.setItem(CURR_KEY,JSON.stringify(s));}
 
+    // IMAGE PROCESSING (Infinite Clamping)
+    let imageData = null; let imgW = 0; let imgH = 0;
+    function handleImage(input){
+        if(input.files && input.files[0]){
+            const reader = new FileReader();
+            reader.onload = function(e){
+                const img = new Image();
+                img.onload = function(){
+                    const preview = document.getElementById("imgPreview");
+                    preview.src = e.target.result; preview.style.display="block";
+                    const cvs = document.getElementById("imgDataCanvas");
+                    const ctx = cvs.getContext("2d");
+                    cvs.width = 500; cvs.height = 500;
+                    ctx.drawImage(img, 0, 0, 500, 500);
+                    const raw = ctx.getImageData(0,0,500,500);
+                    imageData = new Uint8Array(500*500);
+                    for(let i=0; i<raw.data.length; i+=4){
+                        imageData[i/4] = (raw.data[i] + raw.data[i+1] + raw.data[i+2])/3;
+                    }
+                    imgW=500; imgH=500;
+                    document.getElementById("useImage").checked = true;
+                    requestUpdate();
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function sampleMap(x, y, diameter){
+        if(!imageData) return 0;
+        const radius = diameter/2;
+        const u = (x + radius) / diameter;
+        const v = (y + radius) / diameter;
+        const safeU = Math.max(0, Math.min(1, u));
+        const safeV = Math.max(0, Math.min(1, v));
+        const px = Math.floor(safeU * (imgW-1));
+        const py = Math.floor(safeV * (imgH-1));
+        const val = imageData[py*imgW + px];
+        return val/255.0;
+    }
+
     // CORE
     let q=[], canvas, ctx, nodes=0, resizeTimer;
     function init(){ initPresets(); canvas=document.getElementById("mainCanvas"); ctx=canvas.getContext("2d"); requestUpdate(); }
-    function gcd(a,b){return b===0?a:gcd(b,a%b)}
     function lerp(a,b,t){return a+(b-a)*t}
     function getT(r,min,max){if(r<=min)return 0; if(r>=max)return 1; return (r-min)/(max-min);}
     
@@ -185,11 +264,16 @@
         q=[]; clearTimeout(resizeTimer); resizeTimer=setTimeout(()=>renderPreview(od,(id>=od?od-0.1:id)),10);
     }
 
-    function getWaveY(job, t, p, rMod){
-        const paramT = getT(rMod, job.rMin, job.rMax);
-        const amp = lerp(job.aS, job.aE, paramT);
-        const freq = lerp(job.fS, job.fE, paramT);
+    function getWaveY(job, t, p, rMod, nx, ny){
+        const useImg = document.getElementById("useImage").checked;
+        let modT = 0;
+        if(useImg && imageData){ modT = sampleMap(nx, ny, job.rMax*2); }
+        else { modT = getT(rMod, job.rMin, job.rMax); }
+
+        const amp = lerp(job.aS, job.aE, modT);
+        const freq = lerp(job.fS, job.fE, modT);
         const phaseOffset = (job.phaseDeg || 0) * Math.PI / 180;
+        
         const phase = ((t/job.genR) * Math.PI * freq) + phaseOffset;
         if(job.type==="basket_line") return p + ((2/Math.PI)*Math.asin(Math.sin(phase))*amp);
         return p + Math.sin(phase)*amp;
@@ -198,64 +282,76 @@
     // --- PREVIEW ---
     function renderPreview(od, id){
         const type=document.getElementById("patternType").value;
-        let pitch=parseFloat(document.getElementById("pitch").value)||0.03;
+        let pStart=parseFloat(document.getElementById("pitchStart").value)||0.03;
+        let pEnd=parseFloat(document.getElementById("pitchEnd").value)||0.03;
+        
         const scaleQ=parseFloat(document.getElementById("previewScale").value);
         const fidelity=parseFloat(document.getElementById("fidelity").value);
         const distress=parseFloat(document.getElementById("distress").value);
         
-        let activePitch=pitch/scaleQ; if(activePitch<0.02 && scaleQ<0.8) activePitch=0.02;
+        let activePStart=pStart/scaleQ; if(activePStart<0.02 && scaleQ<0.8) activePStart=0.02;
+        let activePEnd=pEnd/scaleQ; if(activePEnd<0.02 && scaleQ<0.8) activePEnd=0.02;
+
         const dpr=window.devicePixelRatio||1; const dispSize=Math.min(window.innerWidth-360, window.innerHeight-50);
         canvas.width=dispSize*dpr; canvas.height=dispSize*dpr; canvas.style.width=dispSize+"px"; canvas.style.height=dispSize+"px";
         ctx.scale(dpr,dpr); ctx.clearRect(0,0,dispSize,dispSize);
         const pxPerMM=(dispSize*0.95)/od; const gridSize=10*pxPerMM; document.getElementById("bgGrid").style.backgroundSize=`${gridSize}px ${gridSize}px`;
         const cx=dispSize/2; const cy=dispSize/2; const or=od/2; const ir=id/2;
         
-        ctx.strokeStyle= (type==="fibonacci") ? "#d500f9" : "#ff00ff"; 
+        ctx.strokeStyle = (type==="fibonacci") ? "#d500f9" : "#00e5ff";
         ctx.lineWidth=0.5; ctx.globalAlpha=0.8;
         ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, or*pxPerMM, 0, Math.PI*2, false); if(ir>0) ctx.arc(cx, cy, ir*pxPerMM, 0, Math.PI*2, true); ctx.clip();
         nodes=0; const stepMM=1/fidelity;
 
-        // Populate Queue
         if(type==="guilloche"||type==="basket"){
             const isB=type==="basket"; const prefix=isB?"b":"g";
             const fS=parseFloat(document.getElementById(prefix+"FreqStart").value); const fE=parseFloat(document.getElementById(prefix+"FreqEnd").value);
             const aS=parseFloat(document.getElementById(prefix+"AmpStart").value); const aE=parseFloat(document.getElementById(prefix+"AmpEnd").value);
-            const phase=parseFloat(document.getElementById(prefix+"Phase").value);
-            const passes=[45,-45]; const overscan=or*1.5;
+            const phase=parseFloat(document.getElementById(prefix+"Phase").value)||0;
+            const mode = document.getElementById(prefix+"Mode").value;
+            const userAng = parseFloat(document.getElementById(prefix+"Angle").value);
+            let passes = (mode === "single") ? [userAng] : [userAng, -userAng]; 
+            const overscan=or*3.0; 
             passes.forEach(deg=>{
                 const rad=deg*Math.PI/180; let p=-overscan;
                 while(p<=overscan){
                     q.push({type:isB?"basket_line":"guilloche_line", p:p, angle:rad, fS:fS, fE:fE, aS:aS, aE:aE, phaseDeg:phase, genR:overscan, cx:cx, cy:cy, scale:pxPerMM, step:stepMM, distress:distress, rMin:ir, rMax:or});
-                    p+=activePitch;
+                    const t = (p + overscan) / (2 * overscan);
+                    const currentPitch = lerp(activePStart, activePEnd, t);
+                    p+=Math.max(currentPitch, 0.01);
                 }
             });
         }
         else if(type==="rose"){
             const n=parseInt(document.getElementById("n").value); const d=parseInt(document.getElementById("d").value);
-            const maxTheta = 2 * Math.PI * d;
-            let r=or;
+            const maxTheta=2*Math.PI*d; let r=or;
             while(r>=ir){
                 q.push({type:"rose", cx:cx, cy:cy, scale:pxPerMM, rEnv:r, k:n/d, maxTheta:maxTheta, fidelity:fidelity, distress:distress, innerR:ir});
-                r-=activePitch;
+                const t = getT(r, ir, or);
+                const currentPitch = lerp(activePStart, activePEnd, t);
+                r-=Math.max(currentPitch, 0.01);
             }
         }
         else if(type==="fibonacci"){
-            const maxN=Math.pow(or/activePitch,2); const startN=Math.pow(ir/activePitch,2);
-            q.push({type:"fib", n:startN, maxN:maxN, c:activePitch, cx:cx, cy:cy, scale:pxPerMM, fidelity:fidelity, distress:distress});
+            // STABLE FIBONACCI
+            q.push({type:"fib_var", cx:cx, cy:cy, scale:pxPerMM, fidelity:fidelity, distress:distress, rMin:ir, rMax:or, startP:activePStart, endP:activePEnd});
         }
         else if(type==="spiral"){
-            const b=activePitch/(2*Math.PI);
-            q.push({type:"spiral", t:ir/b, maxT:or/b, b:b, cx:cx, cy:cy, scale:pxPerMM, fidelity:fidelity, distress:distress});
+            // STABLE SPIRAL
+            q.push({type:"spiral", rMin:ir, rMax:or, startP:activePStart, endP:activePEnd, cx:cx, cy:cy, scale:pxPerMM, fidelity:fidelity, distress:distress});
         }
         else if(type==="polygon"){
             const sides=Math.max(3, parseInt(document.getElementById("polySides").value));
             const rS=parseFloat(document.getElementById("polyRotStart").value); const rE=parseFloat(document.getElementById("polyRotEnd").value);
             const isC=document.getElementById("polyCurve").checked;
             const cS=parseFloat(document.getElementById("polyCurveStart").value); const cE=parseFloat(document.getElementById("polyCurveEnd").value);
-            const radStep=activePitch/Math.cos(Math.PI/sides); let r=or;
+            let r=or;
             while(r>=ir){ 
                 q.push({type:"poly", r:r, sides:sides, rS:rS, rE:rE, isC:isC, cS:cS, cE:cE, cx:cx, cy:cy, scale:pxPerMM, fidelity:fidelity, distress:distress, rMin:ir, rMax:or}); 
-                r-=radStep; 
+                const t = getT(r, ir, or);
+                const currentPitch = lerp(activePStart, activePEnd, t);
+                const radStep=currentPitch/Math.cos(Math.PI/sides);
+                r-=Math.max(radStep, 0.01); 
             }
         }
         processQ();
@@ -263,7 +359,7 @@
 
     function processQ(){
         if(q.length===0){ ctx.restore(); document.getElementById("status-left").innerText="Ready"; return; }
-        ctx.beginPath(); let ops=0; const LIMIT=2000;
+        ctx.beginPath(); let ops=0; const LIMIT=3000;
         while(q.length>0 && ops<LIMIT){ const job=q[0]; const res=drawPreview(job); ops+=res.ops; if(res.done) q.shift(); }
         ctx.stroke(); document.getElementById("status-right").innerText=nodes.toLocaleString()+" nodes"; requestAnimationFrame(processQ);
     }
@@ -271,13 +367,22 @@
     function drawPreview(job){
         let ops=0;
         const isGap = () => (job.distress>0 && Math.random()<job.distress);
+        const MAX_NODES = 500000; // Safety brake
+
+        // Resume Bridge
+        if(job.lastX !== undefined && job.lastY !== undefined) {
+             ctx.moveTo(job.lastX, job.lastY);
+        }
 
         if(job.type.includes("line")){
             const len=2*job.genR; const points=Math.ceil(len/job.step);
             for(let i=0; i<=points; i++){
                 const t=(i/points)*2*job.genR-job.genR;
-                const rMod=Math.sqrt(t*t + job.p*job.p);
-                const rawY=getWaveY(job, t, job.p, rMod);
+                const nx = t*Math.cos(job.angle) - job.p*Math.sin(job.angle);
+                const ny = t*Math.sin(job.angle) + job.p*Math.cos(job.angle);
+                const rMod = Math.sqrt(nx*nx + ny*ny);
+                
+                const rawY=getWaveY(job, t, job.p, rMod, nx, ny);
                 const rx=t*Math.cos(job.angle)-rawY*Math.sin(job.angle);
                 const ry=t*Math.sin(job.angle)+rawY*Math.cos(job.angle);
                 const x=job.cx+rx*job.scale; const y=job.cy+ry*job.scale;
@@ -289,8 +394,7 @@
             return {done:true, ops:ops};
         }
         else if(job.type==="rose"){
-            const len=job.maxTheta*job.rEnv; const steps=Math.ceil(len*job.fidelity);
-            let penDown=false;
+            const len=job.maxTheta*job.rEnv; const steps=Math.ceil(len*job.fidelity); let penDown=false;
             for(let i=0; i<=steps; i++){
                 const th=(i/steps)*job.maxTheta; const rRaw=job.rEnv*Math.cos(job.k*th);
                 if(Math.abs(rRaw)<job.innerR){ penDown=false; continue; }
@@ -300,55 +404,135 @@
             }
             return {done:true, ops:ops};
         }
-        else if(job.type==="fib"){
-            while(job.n < job.maxN && ops<500){
-                const r=job.c*Math.sqrt(job.n); const th=job.n*(Math.PI*(3-Math.sqrt(5)));
-                const x=job.cx+r*Math.cos(th)*job.scale; const y=job.cy+r*Math.sin(th)*job.scale;
+        else if(job.type==="fib_var"){
+            // STABLE DIRECT ITERATION (No Integration)
+            // n starts at 0 or match innerR
+            // r = c * sqrt(n)
+            if(job.n === undefined) {
+                // Find approximate starting n for inner radius
+                // Use StartPitch as 'c' initially
+                job.n = Math.pow(job.rMin / Math.max(0.01, job.startP), 2);
+                job.theta = job.n * Math.PI*(3-Math.sqrt(5));
+            }
+            
+            // Loop until radius exceeds max or op limit
+            while(ops < 500 && nodes < MAX_NODES){
+                // 1. Calculate current C based on previous radius approximation
+                // We use last frame's radius (or approximated) to look up pitch
+                const prevR = job.startC ? (job.startC * Math.sqrt(job.n)) : job.rMin; 
+                // Wait, simply calculate r from n using interpolated pitch
+                
+                // Estimate radius
+                let estimateR = Math.sqrt(job.n) * job.startP; 
+                // Use estimate to find T
+                const t = getT(estimateR, job.rMin, job.rMax);
+                const currentC = lerp(job.startP, job.endP, t);
+                
+                // Calculate true Radius for this n
+                const r = currentC * Math.sqrt(job.n);
+                
+                if(r > job.rMax) return {done:true, ops:ops};
+                if(r < job.rMin) { job.n += 1; continue; } // Skip inner
+                
+                // Theta
+                const theta = job.n * Math.PI*(3-Math.sqrt(5));
+                
+                const x = job.cx + r * Math.cos(theta) * job.scale;
+                const y = job.cy + r * Math.sin(theta) * job.scale;
+                
+                // Draw
                 if(isGap()) ctx.moveTo(x,y);
-                else { if(!job.lastX) ctx.moveTo(x,y); else ctx.lineTo(x,y); nodes++; ops++; }
-                job.lastX=x; job.n+=0.2; 
-            }
-            return {done:job.n>=job.maxN, ops:ops};
-        }
-        else if(job.type==="poly"){
-            // FULL POLY PREVIEW MATH (Fixed from v4.0)
-            const paramT = getT(job.r, job.rMin, job.rMax);
-            const rot = lerp(job.rS, job.rE, paramT); const rad = rot*Math.PI/180;
-            const curve = lerp(job.cS, job.cE, paramT);
-            
-            const sideLen = 2*job.r*Math.sin(Math.PI/job.sides);
-            const steps = Math.max(2, Math.ceil(sideLen * (1+Math.abs(curve))*job.fidelity));
-            
-            for(let i=0; i<job.sides; i++){
-                const t1 = rad + (i*2*Math.PI/job.sides); const x1=job.r*Math.cos(t1); const y1=job.r*Math.sin(t1);
-                const t2 = rad + ((i+1)*2*Math.PI/job.sides); const x2=job.r*Math.cos(t2); const y2=job.r*Math.sin(t2);
-                
-                const mx=(x1+x2)/2; const my=(y1+y2)/2;
-                const dist=Math.sqrt(mx*mx+my*my); const nx=mx/dist; const ny=my/dist;
-                const cpx = mx + nx*(sideLen*curve*0.5); const cpy = my + ny*(sideLen*curve*0.5);
-                
-                for(let k=0; k<=steps; k++){
-                    const t = k/steps; const inv = 1-t;
-                    let fx, fy;
-                    if(!job.isC || curve===0){ fx=x1+(x2-x1)*t; fy=y1+(y2-y1)*t; }
-                    else { fx = (inv*inv*x1) + (2*inv*t*cpx) + (t*t*x2); fy = (inv*inv*y1) + (2*inv*t*cpy) + (t*t*y2); }
-                    
-                    const sx = job.cx+fx*job.scale; const sy = job.cy+fy*job.scale;
-                    if(i===0 && k===0) ctx.moveTo(sx,sy);
-                    else { if(isGap()) ctx.moveTo(sx,sy); else { ctx.lineTo(sx,sy); nodes++; ops++; } }
+                else {
+                    if(job.lastX === undefined) ctx.moveTo(x,y);
+                    else ctx.lineTo(x,y);
+                    nodes++; ops++;
                 }
+                job.lastX = x; job.lastY = y;
+                
+                // Dynamic Step size for N to keep arc length smooth
+                // arc = r * dTheta. dTheta = dn * G.
+                // We want arc ~ stepMM
+                // dn = stepMM / (r * G)
+                const stepMM = 1/job.fidelity;
+                const G = 2.3999;
+                const dn = Math.max(0.1, stepMM / (Math.max(0.1,r) * G)); 
+                // Actually, for points, we usually step by integer n.
+                // But for "Spiral Mode" drawing, we can step partial n.
+                job.n += dn;
             }
-            ctx.closePath();
-            return {done:true, ops:ops};
+            return {done: nodes>=MAX_NODES || false, ops:ops}; // Done logic inside loop
         }
         else if(job.type==="spiral"){
-            while(job.t<job.maxT && ops<500){
-                const r=job.b*job.t; const x=job.cx+r*Math.cos(job.t)*job.scale; const y=job.cy+r*Math.sin(job.t)*job.scale;
+            // STABLE SPIRAL (Direct r(theta) calculation)
+            // r = b * theta
+            if(job.theta === undefined) job.theta = job.rMin / (job.startP/(2*Math.PI));
+            
+            while(ops < 500 && nodes < MAX_NODES){
+                // 1. Current Radius Estimate
+                // Simple approx: r = pitch * theta / 2pi
+                // We iterate theta directly
+                const stepMM = 1/job.fidelity;
+                // Current radius approx
+                // We can integrate dr/dtheta = pitch / 2pi
+                // But simple iteration is safer:
+                // r_new = r_old + (pitch_at_r / 2pi) * dTheta
+                
+                if(job.rCurrent === undefined) job.rCurrent = job.rMin;
+                if(job.rCurrent > job.rMax) return {done:true, ops:ops};
+                
+                const t = getT(job.rCurrent, job.rMin, job.rMax);
+                const currentPitch = lerp(job.startP, job.endP, t);
+                
+                const dTheta = stepMM / Math.max(0.1, job.rCurrent);
+                const dr = (currentPitch / (2*Math.PI)) * dTheta;
+                
+                const x = job.cx + job.rCurrent * Math.cos(job.theta) * job.scale;
+                const y = job.cy + job.rCurrent * Math.sin(job.theta) * job.scale;
+                
                 if(isGap()) ctx.moveTo(x,y);
-                else { if(!job.lastX) ctx.moveTo(x,y); else ctx.lineTo(x,y); nodes++; ops++; }
-                job.lastX=x; job.t+=0.1; 
+                else {
+                    if(job.lastX === undefined) ctx.moveTo(x,y);
+                    else ctx.lineTo(x,y);
+                    nodes++; ops++;
+                }
+                job.lastX = x; job.lastY = y;
+                job.rCurrent += dr;
+                job.theta += dTheta;
             }
-            return {done:job.t>=job.maxT, ops:ops};
+            return {done: nodes>=MAX_NODES || false, ops:ops}; // Done check inside
+        }
+        else if(job.type==="poly"){
+            // ... (Poly logic kept same, it works)
+            const paramT = getT(job.r, job.rMin, job.rMax);
+            const rot = lerp(job.rS, job.rE, paramT); const rad = rot * Math.PI / 180;
+            const curve = lerp(job.cS, job.cE, paramT);
+            const sideLen = 2*job.r*Math.sin(Math.PI/job.sides);
+            const segments = Math.max(2, Math.ceil(sideLen * (1+Math.abs(curve))*job.fidelity));
+            
+            for(let i=0; i<job.sides; i++){
+                const t1 = rad + (i * 2 * Math.PI / job.sides); const x1 = job.r * Math.cos(t1); const y1 = job.r * Math.sin(t1);
+                const t2 = rad + ((i+1) * 2 * Math.PI / job.sides); const x2 = job.r * Math.cos(t2); const y2 = job.r * Math.sin(t2);
+                
+                if(!job.isC || curve===0){
+                    for(let k=0; k<=segments; k++){
+                        const t = k/segments;
+                        const px = x1 + (x2-x1)*t; const py = y1 + (y2-y1)*t;
+                        const sx = job.cx + px*job.scale; const sy = job.cy + py*job.scale;
+                        if(i===0 && k===0) ctx.moveTo(sx,sy); else ctx.lineTo(sx,sy); nodes++; ops++;
+                    }
+                } else {
+                    const mx=(x1+x2)/2; const my=(y1+y2)/2;
+                    const dist=Math.sqrt(mx*mx+my*my); const nx=mx/dist; const ny=my/dist;
+                    const cpx=mx+nx*(sideLen*curve*0.5); const cpy=my+ny*(sideLen*curve*0.5);
+                    for(let k=0; k<=segments; k++){
+                        const t=k/segments; const inv=1-t;
+                        const bx=(inv*inv*x1)+(2*inv*t*cpx)+(t*t*x2); const by=(inv*inv*y1)+(2*inv*t*cpy)+(t*t*y2);
+                        const sx = job.cx + bx*job.scale; const sy = job.cy + by*job.scale;
+                        if(i===0 && k===0) ctx.moveTo(sx,sy); else ctx.lineTo(sx,sy); nodes++; ops++;
+                    }
+                }
+            }
+            return {done:true, ops:ops};
         }
         return {done:true, ops:0};
     }
@@ -358,15 +542,14 @@
         const btn=document.getElementById("dlBtn"); const overlay=document.getElementById("exportOverlay"); const fill=document.getElementById("exportFill"); const status=document.getElementById("exportStatus");
         btn.disabled=true; overlay.classList.add("active");
         
-        // Params
         const type=document.getElementById("patternType").value;
         const od=parseFloat(document.getElementById("size").value); const id=parseFloat(document.getElementById("innerSize").value);
-        let pitch=parseFloat(document.getElementById("pitch").value)||0.005;
+        let pStart=parseFloat(document.getElementById("pitchStart").value)||0.005;
+        let pEnd=parseFloat(document.getElementById("pitchEnd").value)||0.005;
         const fidelity=parseFloat(document.getElementById("fidelity").value); const stepMM=1/fidelity;
         const distress=parseFloat(document.getElementById("distress").value);
         const isGap = () => (distress>0 && Math.random()<distress);
         
-        // OPTIMIZATION
         let minD = parseFloat(document.getElementById("minDist").value) || 0;
         if(type==="fibonacci" && minD < 0.005) minD = 0.005;
         const MIN_DIST_SQ = minD * minD;
@@ -376,15 +559,14 @@
         async function checkYield(){ if(performance.now()-lastYield>YIELD_MS){ await new Promise(r=>setTimeout(r,0)); lastYield=performance.now(); } }
 
         let blobs=[];
-        blobs.push(new Blob([`<svg xmlns="http://www.w3.org/2000/svg" width="${od}mm" height="${od}mm" viewBox="0 0 ${od} ${od}"><defs><clipPath id="c"><path d="M ${cx},${cy} m -${or},0 a ${or},${or} 0 1,0 ${od},0 a ${or},${or} 0 1,0 -${od},0 Z M ${cx},${cy} m -${ir},0 a ${ir},${ir} 0 1,1 ${id},0 a ${ir},${ir} 0 1,1 -${id},0 Z" /></clipPath></defs><g clip-path="url(#c)" fill="none" stroke="black" stroke-width="${pitch/8}mm">`], {type:"text/plain"}));
+        blobs.push(new Blob([`<svg xmlns="http://www.w3.org/2000/svg" width="${od}mm" height="${od}mm" viewBox="0 0 ${od} ${od}"><defs><clipPath id="c"><path d="M ${cx},${cy} m -${or},0 a ${or},${or} 0 1,0 ${od},0 a ${or},${or} 0 1,0 -${od},0 Z M ${cx},${cy} m -${ir},0 a ${ir},${ir} 0 1,1 ${id},0 a ${ir},${ir} 0 1,1 -${id},0 Z" /></clipPath></defs><g clip-path="url(#c)" fill="none" stroke="black" stroke-width="${pStart/8}mm">`], {type:"text/plain"}));
 
         let buffer=""; let pendingMove=null; let exportNodes=0; let lastX=null, lastY=null;
 
         const pt = (x, y, force) => {
             if (force || isGap()) {
                 const xs = x.toFixed(4); const ys = y.toFixed(4);
-                pendingMove = {x:xs, y:ys}; lastX = x; lastY = y; 
-                return;
+                pendingMove = {x:xs, y:ys}; lastX = x; lastY = y; return;
             }
             if (MIN_DIST_SQ > 0 && lastX !== null) {
                 const dx = x - lastX; const dy = y - lastY;
@@ -399,34 +581,44 @@
 
         try {
             if(type==="guilloche"||type==="basket"){
+                // (Omitted for brevity - same logic as preview)
+                // Using preview logic structure
                 const isB=type==="basket"; const prefix=isB?"b":"g";
                 const fS=parseFloat(document.getElementById(prefix+"FreqStart").value); const fE=parseFloat(document.getElementById(prefix+"FreqEnd").value);
                 const aS=parseFloat(document.getElementById(prefix+"AmpStart").value); const aE=parseFloat(document.getElementById(prefix+"AmpEnd").value);
-                const phase=parseFloat(document.getElementById(prefix+"Phase").value);
-                const passes=[45,-45]; const overscan=or*1.5;
-                let totalSteps=passes.length*(2*overscan/pitch); let currStep=0;
+                const phase=parseFloat(document.getElementById(prefix+"Phase").value)||0;
+                const mode = document.getElementById(prefix+"Mode").value;
+                const userAng = parseFloat(document.getElementById(prefix+"Angle").value);
+                let passes = (mode === "single") ? [userAng] : [userAng, -userAng]; 
+                const overscan=or*3.0; 
+                let totalSteps=passes.length*(2*overscan/pStart); let currStep=0;
                 for(const deg of passes){
                     const rad=deg*Math.PI/180; let p=-overscan;
                     while(p<=overscan){
                         const len=2*overscan; const pts=Math.ceil(len/stepMM);
                         for(let i=0; i<=pts; i++){
                             const t=(i/pts)*2*overscan-overscan;
-                            const rMod=Math.sqrt(t*t + p*p);
+                            const nx = t*Math.cos(rad) - p*Math.sin(rad);
+                            const ny = t*Math.sin(rad) + p*Math.cos(rad);
+                            const rMod=Math.sqrt(nx*nx + ny*ny);
+                            
                             const jobMock={rMin:ir, rMax:or, fS:fS, fE:fE, aS:aS, aE:aE, phaseDeg:phase, genR:overscan, type:isB?"basket_line":"guilloche_line"};
-                            const rawY=getWaveY(jobMock, t, p, rMod);
+                            const rawY=getWaveY(jobMock, t, p, rMod, nx, ny);
                             const rx=t*Math.cos(rad)-rawY*Math.sin(rad);
                             const ry=t*Math.sin(rad)+rawY*Math.cos(rad);
                             pt(cx+rx, cy+ry, i===0);
                         }
-                        p+=pitch; currStep++;
-                        if(currStep%20===0) { await checkYield(); fill.style.width=Math.min(100,(currStep/totalSteps)*100)+"%"; status.innerText=`Nodes: ${exportNodes.toLocaleString()}`; }
+                        const t = (p + overscan) / (2 * overscan);
+                        const currentPitch = lerp(pStart, pEnd, t);
+                        p+=Math.max(currentPitch, 0.01);
+                        currStep++; if(currStep%20===0) { await checkYield(); fill.style.width=Math.min(100,(currStep/totalSteps)*100)+"%"; status.innerText=`Nodes: ${exportNodes.toLocaleString()}`; }
                     }
                 }
             }
             else if(type==="rose"){
                 const n=parseInt(document.getElementById("n").value); const d=parseInt(document.getElementById("d").value);
                 const maxTheta=2*Math.PI*d;
-                let r=or; let totalR=(or-ir)/pitch; let currR=0;
+                let r=or; let totalR=(or-ir)/pStart; let currR=0;
                 while(r>=ir){
                     const len=maxTheta*r; const steps=Math.ceil(len*fidelity);
                     let penDown=false;
@@ -437,37 +629,62 @@
                         pt(x,y, !penDown); penDown=true;
                         if(i%1000===0) await checkYield();
                     }
-                    r-=pitch; currR++;
-                    fill.style.width=Math.min(100,(currR/totalR)*100)+"%"; status.innerText=`Nodes: ${exportNodes.toLocaleString()}`;
+                    const t = getT(r, ir, or);
+                    const currentPitch = lerp(pStart, pEnd, t);
+                    r-=Math.max(currentPitch, 0.01);
+                    currR++; fill.style.width=Math.min(100,(currR/totalR)*100)+"%"; status.innerText=`Nodes: ${exportNodes.toLocaleString()}`;
                 }
             }
             else if(type==="fibonacci"){
-                const maxN=Math.pow(or/pitch,2); const startN=Math.pow(ir/pitch,2); const gAngle=Math.PI*(3-Math.sqrt(5));
-                let n=startN; let isFirst=true;
-                while(n<maxN){
-                    const r=pitch*Math.sqrt(n); const th=n*gAngle;
-                    const x=cx+r*Math.cos(th); const y=cy+r*Math.sin(th);
-                    pt(x,y, isFirst); isFirst=false;
-                    let rSafe=Math.max(r,0.05); n+=stepMM/rSafe;
+                // Stable Export Logic
+                let n = Math.pow(ir/pStart, 2);
+                let rCurrent = ir;
+                const MAX_EXPORT_NODES = 2000000;
+                
+                while(rCurrent < or && exportNodes < MAX_EXPORT_NODES){
+                    let estimateR = Math.sqrt(n) * pStart;
+                    const t = getT(estimateR, ir, or);
+                    const currentC = lerp(pStart, pEnd, t);
+                    rCurrent = currentC * Math.sqrt(n);
+                    
+                    if(rCurrent > or) break;
+                    if(rCurrent < ir) { n+=1; continue; }
+                    
+                    const theta = n * Math.PI*(3-Math.sqrt(5));
+                    const x = cx + rCurrent * Math.cos(theta);
+                    const y = cy + rCurrent * Math.sin(theta);
+                    
+                    pt(x,y, false); // continuous line assumption or points? 
+                    // Usually Fib is treated as connected spiral.
+                    
+                    const G = 2.3999;
+                    const dn = Math.max(0.1, stepMM / (Math.max(0.1,rCurrent) * G));
+                    n += dn;
+                    
                     if(exportNodes%5000===0){ await checkYield(); status.innerText=`Nodes: ${exportNodes.toLocaleString()}`; }
                 }
             }
             else if(type==="spiral"){
-                const b=pitch/(2*Math.PI); const maxT=or/b; let t=ir/b;
-                let isFirst=true;
-                while(t<maxT){
-                    const r=b*t; const x=cx+r*Math.cos(t); const y=cy+r*Math.sin(t);
-                    pt(x,y, isFirst); isFirst=false;
-                    let rSafe=Math.max(r,0.05); t+=stepMM/rSafe;
+                let r = ir; let theta = 0;
+                while(r < or){
+                    const t = getT(r, ir, or);
+                    const currentPitch = lerp(pStart, pEnd, t);
+                    const dTheta = stepMM / Math.max(0.1, r);
+                    const dr = (currentPitch / (2*Math.PI)) * dTheta;
+                    
+                    const x = cx + r*Math.cos(theta); const y = cy + r*Math.sin(theta);
+                    pt(x,y, theta===0);
+                    
+                    r += dr; theta += dTheta;
                     if(exportNodes%5000===0){ await checkYield(); status.innerText=`Nodes: ${exportNodes.toLocaleString()}`; }
                 }
             }
             else if(type==="polygon"){
+                // Same as preview loop
                 const sides = Math.max(3, parseInt(document.getElementById('polySides').value));
                 const rS = parseFloat(document.getElementById('polyRotStart').value); const rE = parseFloat(document.getElementById('polyRotEnd').value);
                 const isC = document.getElementById('polyCurve').checked;
                 const cS = parseFloat(document.getElementById('polyCurveStart').value); const cE = parseFloat(document.getElementById('polyCurveEnd').value);
-                const radStep = pitch / Math.cos(Math.PI/sides);
                 let r = or;
                 while(r >= ir){
                     const paramT = getT(r, ir, or);
@@ -479,7 +696,6 @@
                     for(let i=0; i<sides; i++){
                         const t1=rad+(i*2*Math.PI/sides); const x1=r*Math.cos(t1); const y1=r*Math.sin(t1);
                         const t2=rad+((i+1)*2*Math.PI/sides); const x2=r*Math.cos(t2); const y2=r*Math.sin(t2);
-                        
                         if(!isC || curve===0){
                             for(let k=0; k<=segments; k++){
                                 const t=k/segments; const px=cx+x1+(x2-x1)*t; const py=cy+y1+(y2-y1)*t;
@@ -496,8 +712,10 @@
                             }
                         }
                     }
-                    if(distress===0 && buffer.length>0) buffer += "Z ";
-                    r-=radStep;
+                    const t = getT(r, ir, or);
+                    const currentPitch = lerp(pStart, pEnd, t);
+                    const radStep = currentPitch / Math.cos(Math.PI/sides);
+                    r-=Math.max(radStep, 0.01);
                     if(exportNodes%5000===0) await checkYield();
                 }
             }
@@ -508,7 +726,7 @@
             const finalBlob = new Blob(blobs, {type:"image/svg+xml"});
             const url = URL.createObjectURL(finalBlob);
             const a = document.createElement("a"); a.href = url;
-            a.download = `holo_v5.0_${type}.svg`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            a.download = `holo_v24.0_${type}.svg`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
 
         } catch(e) { alert("Export Error: "+e.message); } finally { btn.disabled=false; overlay.classList.remove("active"); }
     }
@@ -517,4 +735,3 @@
 </script>
 </body>
 </html>
-
