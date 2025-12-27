@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Holo-Grate v24.0 (Stable Math)</title>
+    <title>Holo-Grate v25.1 (Cleaned)</title>
     <style>
         :root {
             --bg: #050505; --panel: #111; --text: #ddd;
-            --accent: #2979ff; /* Stability Blue */
-            --border: #333; --success: #00e676;
+            --accent: #ffab00; /* Gold */
+            --border: #333; --danger: #ff1744; --success: #00e676;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; margin: 0; overflow: hidden; }
         ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
@@ -25,7 +25,7 @@
         .dual-label { font-size: 0.7em; color: #666; margin-bottom: 2px; }
         
         .btn-group { margin-top: auto; padding-top: 20px; display: flex; flex-direction: column; gap: 10px; }
-        button { background: var(--accent); color: #fff; border: none; padding: 12px; border-radius: 4px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
+        button { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 4px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
         button:hover { filter: brightness(1.1); }
         button.secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
         
@@ -48,7 +48,6 @@
         .loader-box { width: 300px; text-align: center; }
 
         .status-bar { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(20,20,20,0.9); padding: 5px 20px; font-size: 0.75em; color: #888; display: flex; justify-content: space-between; z-index: 20; border-top: 1px solid #333; }
-        #progress-bar { position: absolute; top: 0; left: 0; height: 2px; background: var(--accent); width: 0%; transition: width 0.2s; }
         
         .opt-box { border: 1px solid #333; background: #1a1a1a; padding: 10px; border-radius: 4px; margin-top: 10px; }
     </style>
@@ -64,7 +63,7 @@
 </div>
 
 <div class="controls">
-    <div><h2>Holo-Grate</h2><div class="subtitle">v24.0 Stable</div></div>
+    <div><h2>Holo-Grate</h2><div class="subtitle">v25.1 Cleaned</div></div>
 
     <div class="preset-container">
         <label>PRESETS</label>
@@ -100,8 +99,12 @@
         </select>
     </div>
 
-    <div class="control-group"><label>Outer Diameter (mm)</label><input type="number" id="size" value="28.5" step="0.1" oninput="requestUpdate()"></div>
-    <div class="control-group"><label>Inner Diameter (mm)</label><input type="number" id="innerSize" value="2.0" step="0.1" oninput="requestUpdate()"></div>
+    <div class="control-group"><label>Dimensions (mm)</label>
+        <div class="dual-input">
+            <div><span class="dual-label">Outer</span><input type="number" id="size" value="28.5" step="0.1" oninput="requestUpdate()"></div>
+            <div><span class="dual-label">Inner</span><input type="number" id="innerSize" value="2.0" step="0.1" oninput="requestUpdate()"></div>
+        </div>
+    </div>
     
     <div class="control-group">
         <label style="color:var(--accent)">Pitch Gradient (mm)</label>
@@ -111,6 +114,16 @@
         </div>
     </div>
     
+    <div class="control-group">
+        <label style="color:var(--accent)">Display Quality</label>
+        <select id="renderQuality" onchange="requestUpdate()">
+            <option value="1">Standard (Fast)</option>
+            <option value="2" selected>High (2x Super-Sample)</option>
+            <option value="4">Ultra (4x Super-Sample)</option>
+        </select>
+        <div style="margin-top:5px"><label><input type="checkbox" id="adaptiveWidth" onchange="requestUpdate()" checked> Adaptive Width</label></div>
+    </div>
+
     <div class="control-group"><label>Distress (0-0.5)</label><input type="range" id="distress" min="0" max="0.5" step="0.01" value="0" oninput="requestUpdate()"></div>
     <div class="control-group"><label>Smoothness</label><input type="range" id="fidelity" min="5" max="100" step="1" value="50" oninput="requestUpdate()"></div>
     <div class="control-group"><label>Preview Density</label><input type="range" id="previewScale" min="0.1" max="1.0" step="0.1" value="0.5" oninput="requestUpdate()"></div>
@@ -121,7 +134,6 @@
             <div style="flex:2"><input type="number" id="minDist" value="0.01" step="0.001"></div>
             <div style="flex:1; align-self:center; font-size:0.7em; color:#888;">Min Dist</div>
         </div>
-        <div style="font-size:0.7em; color:#666; margin-top:4px;">Set 0.01 to reduce file size.</div>
     </div>
 
     <div id="guillocheParams" class="specific-params">
@@ -186,8 +198,8 @@
 
 <script>
     // PRESETS & SETUP
-    const STORAGE_KEY="holoGrate_v24.0_presets", CURR_KEY="holoGrate_v24.0_curr";
-    const IDS = ["patternType","size","innerSize","pitchStart","pitchEnd","distress","fidelity","minDist","polySides","polyRotStart","polyRotEnd","polyCurve","polyCurveStart","polyCurveEnd","bFreqStart","bFreqEnd","bAmpStart","bAmpEnd","bPhase","gFreqStart","gFreqEnd","gAmpStart","gAmpEnd","gPhase","gMode","gAngle","bMode","bAngle","n","d","useImage"];
+    const STORAGE_KEY="holoGrate_v25.1_presets", CURR_KEY="holoGrate_v25.1_curr";
+    const IDS = ["patternType","size","innerSize","pitchStart","pitchEnd","distress","fidelity","minDist","polySides","polyRotStart","polyRotEnd","polyCurve","polyCurveStart","polyCurveEnd","bFreqStart","bFreqEnd","bAmpStart","bAmpEnd","bPhase","gFreqStart","gFreqEnd","gAmpStart","gAmpEnd","gPhase","gMode","gAngle","bMode","bAngle","n","d","useImage","renderQuality","adaptiveWidth"];
     function initPresets(){
         const sel=document.getElementById("presetSelect"); const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");
         sel.innerHTML='<option value="">Load...</option>';
@@ -245,6 +257,7 @@
     // CORE
     let q=[], canvas, ctx, nodes=0, resizeTimer;
     function init(){ initPresets(); canvas=document.getElementById("mainCanvas"); ctx=canvas.getContext("2d"); requestUpdate(); }
+    function gcd(a,b){return b===0?a:gcd(b,a%b)}
     function lerp(a,b,t){return a+(b-a)*t}
     function getT(r,min,max){if(r<=min)return 0; if(r>=max)return 1; return (r-min)/(max-min);}
     
@@ -285,23 +298,51 @@
         let pStart=parseFloat(document.getElementById("pitchStart").value)||0.03;
         let pEnd=parseFloat(document.getElementById("pitchEnd").value)||0.03;
         
-        const scaleQ=parseFloat(document.getElementById("previewScale").value);
         const fidelity=parseFloat(document.getElementById("fidelity").value);
         const distress=parseFloat(document.getElementById("distress").value);
         
-        let activePStart=pStart/scaleQ; if(activePStart<0.02 && scaleQ<0.8) activePStart=0.02;
-        let activePEnd=pEnd/scaleQ; if(activePEnd<0.02 && scaleQ<0.8) activePEnd=0.02;
-
-        const dpr=window.devicePixelRatio||1; const dispSize=Math.min(window.innerWidth-360, window.innerHeight-50);
-        canvas.width=dispSize*dpr; canvas.height=dispSize*dpr; canvas.style.width=dispSize+"px"; canvas.style.height=dispSize+"px";
-        ctx.scale(dpr,dpr); ctx.clearRect(0,0,dispSize,dispSize);
-        const pxPerMM=(dispSize*0.95)/od; const gridSize=10*pxPerMM; document.getElementById("bgGrid").style.backgroundSize=`${gridSize}px ${gridSize}px`;
+        // Super-Res & Adaptive Width
+        const qual = parseInt(document.getElementById("renderQuality").value);
+        const dpr = window.devicePixelRatio || 1;
+        const dispSize = Math.min(window.innerWidth-360, window.innerHeight-50);
+        
+        canvas.width = dispSize * dpr * qual;
+        canvas.height = dispSize * dpr * qual;
+        canvas.style.width = dispSize + "px";
+        canvas.style.height = dispSize + "px";
+        
+        ctx.scale(dpr*qual, dpr*qual);
+        ctx.clearRect(0,0,dispSize,dispSize);
+        
+        const pxPerMM = (dispSize*0.95)/od; 
+        const gridSize = 10*pxPerMM; 
+        document.getElementById("bgGrid").style.backgroundSize=`${gridSize}px ${gridSize}px`;
         const cx=dispSize/2; const cy=dispSize/2; const or=od/2; const ir=id/2;
         
-        ctx.strokeStyle = (type==="fibonacci") ? "#d500f9" : "#00e5ff";
-        ctx.lineWidth=0.5; ctx.globalAlpha=0.8;
+        ctx.strokeStyle = (type==="fibonacci") ? "#ffab00" : "#ffab00";
+        
+        // Adaptive Width Calculation
+        if(document.getElementById("adaptiveWidth").checked){
+            // Base pitch logic: approx average pitch at scale
+            const avgPitch = (pStart + pEnd) / 2;
+            const pxPitch = avgPitch * pxPerMM; 
+            // If pitch is 1px wide, line must be <1px to see gap.
+            // Target roughly 60% stroke, 40% gap
+            let width = Math.min(0.5, pxPitch * 0.6);
+            if(width < 0.05) width = 0.05; // Absolute minimum
+            ctx.lineWidth = width;
+        } else {
+            ctx.lineWidth = 0.5;
+        }
+        
+        ctx.globalAlpha=0.9;
         ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, or*pxPerMM, 0, Math.PI*2, false); if(ir>0) ctx.arc(cx, cy, ir*pxPerMM, 0, Math.PI*2, true); ctx.clip();
         nodes=0; const stepMM=1/fidelity;
+
+        // Apply preview scale to pitch to make it visible
+        const scaleQ=parseFloat(document.getElementById("previewScale").value);
+        let activePStart=pStart/scaleQ; if(activePStart<0.02 && scaleQ<0.8) activePStart=0.02;
+        let activePEnd=pEnd/scaleQ; if(activePEnd<0.02 && scaleQ<0.8) activePEnd=0.02;
 
         if(type==="guilloche"||type==="basket"){
             const isB=type==="basket"; const prefix=isB?"b":"g";
@@ -333,7 +374,7 @@
             }
         }
         else if(type==="fibonacci"){
-            // STABLE FIBONACCI
+            // STABLE DIRECT ITERATION (No Integration)
             q.push({type:"fib_var", cx:cx, cy:cy, scale:pxPerMM, fidelity:fidelity, distress:distress, rMin:ir, rMax:or, startP:activePStart, endP:activePEnd});
         }
         else if(type==="spiral"){
@@ -406,41 +447,24 @@
         }
         else if(job.type==="fib_var"){
             // STABLE DIRECT ITERATION (No Integration)
-            // n starts at 0 or match innerR
-            // r = c * sqrt(n)
             if(job.n === undefined) {
-                // Find approximate starting n for inner radius
-                // Use StartPitch as 'c' initially
                 job.n = Math.pow(job.rMin / Math.max(0.01, job.startP), 2);
                 job.theta = job.n * Math.PI*(3-Math.sqrt(5));
             }
             
-            // Loop until radius exceeds max or op limit
             while(ops < 500 && nodes < MAX_NODES){
-                // 1. Calculate current C based on previous radius approximation
-                // We use last frame's radius (or approximated) to look up pitch
-                const prevR = job.startC ? (job.startC * Math.sqrt(job.n)) : job.rMin; 
-                // Wait, simply calculate r from n using interpolated pitch
-                
-                // Estimate radius
                 let estimateR = Math.sqrt(job.n) * job.startP; 
-                // Use estimate to find T
                 const t = getT(estimateR, job.rMin, job.rMax);
                 const currentC = lerp(job.startP, job.endP, t);
-                
-                // Calculate true Radius for this n
                 const r = currentC * Math.sqrt(job.n);
                 
                 if(r > job.rMax) return {done:true, ops:ops};
-                if(r < job.rMin) { job.n += 1; continue; } // Skip inner
+                if(r < job.rMin) { job.n += 1; continue; } 
                 
-                // Theta
                 const theta = job.n * Math.PI*(3-Math.sqrt(5));
-                
                 const x = job.cx + r * Math.cos(theta) * job.scale;
                 const y = job.cy + r * Math.sin(theta) * job.scale;
                 
-                // Draw
                 if(isGap()) ctx.moveTo(x,y);
                 else {
                     if(job.lastX === undefined) ctx.moveTo(x,y);
@@ -449,37 +473,22 @@
                 }
                 job.lastX = x; job.lastY = y;
                 
-                // Dynamic Step size for N to keep arc length smooth
-                // arc = r * dTheta. dTheta = dn * G.
-                // We want arc ~ stepMM
-                // dn = stepMM / (r * G)
                 const stepMM = 1/job.fidelity;
                 const G = 2.3999;
                 const dn = Math.max(0.1, stepMM / (Math.max(0.1,r) * G)); 
-                // Actually, for points, we usually step by integer n.
-                // But for "Spiral Mode" drawing, we can step partial n.
                 job.n += dn;
             }
-            return {done: nodes>=MAX_NODES || false, ops:ops}; // Done logic inside loop
+            return {done: nodes>=MAX_NODES || false, ops:ops}; 
         }
         else if(job.type==="spiral"){
-            // STABLE SPIRAL (Direct r(theta) calculation)
-            // r = b * theta
+            // STABLE SPIRAL
             if(job.theta === undefined) job.theta = job.rMin / (job.startP/(2*Math.PI));
             
             while(ops < 500 && nodes < MAX_NODES){
-                // 1. Current Radius Estimate
-                // Simple approx: r = pitch * theta / 2pi
-                // We iterate theta directly
-                const stepMM = 1/job.fidelity;
-                // Current radius approx
-                // We can integrate dr/dtheta = pitch / 2pi
-                // But simple iteration is safer:
-                // r_new = r_old + (pitch_at_r / 2pi) * dTheta
-                
                 if(job.rCurrent === undefined) job.rCurrent = job.rMin;
                 if(job.rCurrent > job.rMax) return {done:true, ops:ops};
                 
+                const stepMM = 1/job.fidelity;
                 const t = getT(job.rCurrent, job.rMin, job.rMax);
                 const currentPitch = lerp(job.startP, job.endP, t);
                 
@@ -499,10 +508,10 @@
                 job.rCurrent += dr;
                 job.theta += dTheta;
             }
-            return {done: nodes>=MAX_NODES || false, ops:ops}; // Done check inside
+            return {done: nodes>=MAX_NODES || false, ops:ops}; 
         }
         else if(job.type==="poly"){
-            // ... (Poly logic kept same, it works)
+            // ... (Poly logic same as v24)
             const paramT = getT(job.r, job.rMin, job.rMax);
             const rot = lerp(job.rS, job.rE, paramT); const rad = rot * Math.PI / 180;
             const curve = lerp(job.cS, job.cE, paramT);
@@ -537,7 +546,7 @@
         return {done:true, ops:0};
     }
 
-    // --- EXPORT ---
+    // --- EXPORT SVG (Standard) ---
     async function exportSVG(){
         const btn=document.getElementById("dlBtn"); const overlay=document.getElementById("exportOverlay"); const fill=document.getElementById("exportFill"); const status=document.getElementById("exportStatus");
         btn.disabled=true; overlay.classList.add("active");
@@ -726,7 +735,7 @@
             const finalBlob = new Blob(blobs, {type:"image/svg+xml"});
             const url = URL.createObjectURL(finalBlob);
             const a = document.createElement("a"); a.href = url;
-            a.download = `holo_v24.0_${type}.svg`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            a.download = `holo_v25.4_${type}.svg`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
 
         } catch(e) { alert("Export Error: "+e.message); } finally { btn.disabled=false; overlay.classList.remove("active"); }
     }
@@ -735,3 +744,4 @@
 </script>
 </body>
 </html>
+
